@@ -1,0 +1,17 @@
+---
+- name: Validate vector config
+  become: true
+  ansible.builtin.command:
+    cmd: "{{ vector_install_dir }}/bin/vector validate --no-environment {{ vector_config_dir }}/vector.yml"
+  changed_when: false
+
+- name: Reload systemd
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart vector
+  become: true
+  ansible.builtin.systemd:
+    name: vector
+    state: restarted

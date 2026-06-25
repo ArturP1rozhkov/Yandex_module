@@ -1,0 +1,5 @@
+---
+lighthouse_url: "https://github.com/VKCOM/lighthouse/archive/refs/heads/master.zip"
+lighthouse_dir: "/opt/lighthouse"
+lighthouse_nginx_config: "/etc/nginx/conf.d/lighthouse.conf"
+lighthouse_listen_port: 80

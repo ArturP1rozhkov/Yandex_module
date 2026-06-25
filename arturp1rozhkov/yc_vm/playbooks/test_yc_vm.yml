@@ -1,0 +1,38 @@
+---
+- name: Test yc_vm skeleton
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars/hosts.yml
+  tasks:
+    - name: Validate VM specs with yc_vm module
+      arturp1rozhkov.yc_vm.yc_vm:
+        name: "{{ item.name }}"
+        hostname: "{{ item.hostname }}"
+        zone: "{{ item.zone }}"
+        platform_id: "{{ item.platform_id }}"
+        cores: "{{ item.cores }}"
+        memory: "{{ item.memory }}"
+        core_fraction: "{{ item.core_fraction }}"
+        image_family: "{{ item.image_family }}"
+        subnet_id: "{{ item.subnet_id }}"
+        nat: "{{ item.nat }}"
+        ssh_user: "{{ item.ssh_user }}"
+        public_key_path: "{{ item.public_key_path }}"
+        state: present
+        vm_state: "{{ item.vm_state }}"
+      loop: "{{ yc_hosts }}"
+      register: yc_vm_results
+
+    - name: Show compact module results
+  ansible.builtin.debug:
+    msg:
+      - "name={{ item.item.name }}"
+      - "group={{ item.item.group }}"
+      - "instance_id={{ item.instance_id }}"
+      - "internal_ip={{ item.internal_ip }}"
+      - "public_ip={{ item.public_ip }}"
+      - "fqdn={{ item.fqdn }}"
+      - "status={{ item.current_status }}"
+      - "changed={{ item.changed }}"
+  loop: "{{ yc_vm_results.results }}"

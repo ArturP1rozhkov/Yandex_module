@@ -1,0 +1,10 @@
+---
+clickhouse_packages:
+  - clickhouse-server
+  - clickhouse-client
+
+clickhouse_repo_url: "https://packages.clickhouse.com/rpm/clickhouse.repo"
+clickhouse_service_name: "clickhouse-server"
+clickhouse_wait_host: "127.0.0.1"
+clickhouse_wait_port: 9000
+clickhouse_wait_timeout: 60

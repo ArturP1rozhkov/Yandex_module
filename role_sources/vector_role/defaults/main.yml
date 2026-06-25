@@ -1,0 +1,23 @@
+---
+vector_version: "0.37.1"
+
+vector_install_dir: "/opt/vector"
+vector_config_dir: "/etc/vector"
+vector_data_dir: "/var/lib/vector"
+
+vector_user: "vector"
+vector_group: "vector"
+
+vector_download_url: "https://github.com/vectordotdev/vector/releases/download/v{{ vector_version }}/vector-{{ vector_version }}-x86_64-unknown-linux-musl.tar.gz"
+
+vector_sources:
+  journald_logs:
+    type: journald
+
+vector_sinks:
+  clickhouse_out:
+    type: console
+    inputs:
+      - journald_logs
+    encoding:
+      codec: json

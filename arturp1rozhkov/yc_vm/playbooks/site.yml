@@ -1,0 +1,118 @@
+---
+- name: Discover and register YC hosts
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars/hosts.yml
+
+  tasks:
+    - name: Ensure YC VMs are present and in desired state
+      arturp1rozhkov.yc_vm.yc_vm:
+        name: "{{ item.name }}"
+        hostname: "{{ item.hostname }}"
+        zone: "{{ item.zone }}"
+        platform_id: "{{ item.platform_id }}"
+        cores: "{{ item.cores }}"
+        memory: "{{ item.memory }}"
+        core_fraction: "{{ item.core_fraction }}"
+        image_family: "{{ item.image_family }}"
+        subnet_id: "{{ item.subnet_id }}"
+        nat: "{{ item.nat }}"
+        ssh_user: "{{ item.ssh_user }}"
+        public_key_path: "{{ item.public_key_path }}"
+        state: present
+        vm_state: "{{ item.vm_state }}"
+      loop: "{{ yc_hosts }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: yc_vm_results
+
+    - name: Show compact module results
+      ansible.builtin.debug:
+        msg:
+          - "name={{ item.item.name }}"
+          - "group={{ item.item.group }}"
+          - "instance_id={{ item.instance_id }}"
+          - "internal_ip={{ item.internal_ip }}"
+          - "public_ip={{ item.public_ip }}"
+          - "fqdn={{ item.fqdn }}"
+          - "status={{ item.current_status }}"
+          - "changed={{ item.changed }}"
+        verbosity: 1
+      loop: "{{ yc_vm_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Add hosts to runtime inventory
+      ansible.builtin.add_host:
+        name: "{{ item.item.name }}"
+        groups: "{{ item.item.group }}"
+        ansible_host: "{{ item.public_ip | default(item.internal_ip, true) }}"
+        ansible_user: "{{ item.item.ssh_user }}"
+        ansible_ssh_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/id_ed25519' }}"
+        ansible_ssh_common_args: >-
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null
+          -o GlobalKnownHostsFile=/dev/null
+          -o ConnectTimeout=10
+        fqdn: "{{ item.fqdn }}"
+        internal_ip: "{{ item.internal_ip }}"
+        public_ip: "{{ item.public_ip }}"
+        instance_id: "{{ item.instance_id }}"
+        yc_vm_name: "{{ item.item.name }}"
+      loop: "{{ yc_vm_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      when:
+        - not item.failed
+        - item.exists
+        - item.current_status == "RUNNING"
+
+- name: Verify SSH and gather facts
+  hosts: clickhouse:vector:lighthouse
+  gather_facts: false
+  serial: 1
+
+  tasks:
+    - name: Wait for SSH connection
+      ansible.builtin.wait_for_connection:
+        timeout: 30
+        delay: 2
+        sleep: 3
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Show host summary
+      ansible.builtin.debug:
+        msg:
+          - "host={{ inventory_hostname }}"
+          - "ip={{ ansible_host }}"
+          - "user={{ ansible_user }}"
+          - "os={{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+          - "python={{ ansible_facts['python']['executable'] }}"
+        verbosity: 1
+
+- name: Configure ClickHouse hosts
+  hosts: clickhouse
+  gather_facts: true
+  become: true
+
+  roles:
+    - clickhouse_role
+
+- name: Configure Vector hosts
+  hosts: vector
+  gather_facts: true
+  become: true
+
+  roles:
+    - vector_role
+
+- name: Configure Lighthouse hosts
+  hosts: lighthouse
+  gather_facts: true
+  become: true
+
+  roles:
+    - lighthouse_role

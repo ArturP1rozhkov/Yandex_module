@@ -1,0 +1,26 @@
+namespace: arturp1rozhkov
+name: yc_vm
+version: 0.1.0
+readme: README.md
+
+authors:
+  - Artur Pirozhkov
+
+description: Ansible collection with a custom Yandex Cloud VM module and playbooks for provisioning hosts and deploying the stack.
+license:
+  - GPL-2.0-or-later
+
+tags:
+  - yandex
+  - cloud
+  - vm
+  - ansible
+
+dependencies: {}
+
+repository: https://github.com/ArturP1rozhkov/Yandex_module
+documentation: https://github.com/ArturP1rozhkov/Yandex_module
+homepage: https://github.com/ArturP1rozhkov/Yandex_module
+issues: https://github.com/ArturP1rozhkov/Yandex_module/issues
+
+build_ignore: []

@@ -1,0 +1,40 @@
+---
+- name: Install dnf plugin for repo management
+  ansible.builtin.dnf:
+    name: dnf-plugins-core
+    state: present
+
+- name: Add ClickHouse repository
+  ansible.builtin.command:
+    cmd: dnf config-manager --add-repo {{ clickhouse_repo_url }}
+  args:
+    creates: /etc/yum.repos.d/clickhouse.repo
+
+- name: Install ClickHouse packages
+  ansible.builtin.dnf:
+    name: "{{ clickhouse_packages }}"
+    state: present
+  notify: Restart clickhouse
+
+- name: Ensure ClickHouse service is enabled and started
+  ansible.builtin.service:
+    name: "{{ clickhouse_service_name }}"
+    state: started
+    enabled: true
+
+- name: Wait for ClickHouse TCP port
+  ansible.builtin.wait_for:
+    host: "{{ clickhouse_wait_host }}"
+    port: "{{ clickhouse_wait_port }}"
+    timeout: "{{ clickhouse_wait_timeout }}"
+    delay: 2
+
+- name: Check ClickHouse version
+  ansible.builtin.command: clickhouse-client --query "SELECT version()"
+  register: clickhouse_version
+  changed_when: false
+
+- name: Show ClickHouse version
+  ansible.builtin.debug:
+    msg: "ClickHouse version: {{ clickhouse_version.stdout }}"
+    verbosity: 1

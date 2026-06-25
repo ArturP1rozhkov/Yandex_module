@@ -1,0 +1,61 @@
+---
+- name: Install nginx and unzip
+  become: true
+  ansible.builtin.package:
+    name:
+      - nginx
+      - unzip
+    state: present
+
+- name: Download Lighthouse archive
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ lighthouse_url }}"
+    dest: /tmp/lighthouse.zip
+    mode: "0644"
+    timeout: 60
+  when: not ansible_check_mode
+
+- name: Create Lighthouse directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ lighthouse_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Unarchive Lighthouse
+  become: true
+  ansible.builtin.unarchive:
+    src: /tmp/lighthouse.zip
+    dest: /tmp
+    remote_src: true
+    creates: /tmp/lighthouse-master
+  when: not ansible_check_mode
+
+- name: Copy Lighthouse files
+  become: true
+  ansible.builtin.copy:
+    src: /tmp/lighthouse-master/
+    dest: "{{ lighthouse_dir }}/"
+    remote_src: true
+    mode: preserve
+  when: not ansible_check_mode
+
+- name: Deploy nginx config for Lighthouse
+  become: true
+  ansible.builtin.template:
+    src: lighthouse.conf.j2
+    dest: "{{ lighthouse_nginx_config }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nginx
+
+- name: Ensure nginx is enabled and started
+  become: true
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
